@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Cipher Encrypt/Decrypt</title>
+  <!-- Bootstrap CSS CDN -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      color: #fff;
+    }
+    .card {
+      width: 100%;
+      max-width: 600px;
+      padding: 2rem;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+    .form-label {
+      font-weight: 600;
+      color: #e0e0e0;
+    }
+    textarea.form-control {
+      resize: vertical;
+      min-height: 120px;
+    }
+    .result {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: monospace;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      min-height: 80px;
+      color: #fafafa;
+      user-select: all;
+    }
+    .btn-primary {
+      background-color: #4f46e5;
+      border-color: #4f46e5;
+    }
+    .btn-primary:hover {
+      background-color: #4338ca;
+      border-color: #4338ca;
+    }
+    h1 {
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 2rem;
+      text-shadow: 1px 1px 5px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Multi-Cipher Encrypt/Decrypt</h1>
+
+    <div class="mb-3">
+      <label for="cipher" class="form-label">Select Cipher:</label>
+      <select class="form-select" id="cipher">
+        <option value="vigenere">Vigenère Cipher</option>
+        <option value="caesar">Caesar Cipher</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="mode" class="form-label">Select Mode:</label>
+      <select class="form-select" id="mode">
+        <option value="encrypt">Encrypt</option>
+        <option value="decrypt">Decrypt</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="key" class="form-label">Enter Key:</label>
+      <input
+        type="text"
+        class="form-control"
+        id="key"
+        placeholder="Vigenère: letters only; Caesar: number"
+      />
+      <div class="form-text" id="keyHelp">Key rules change based on cipher selected.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="message" class="form-label">Enter Message:</label>
+      <textarea
+        class="form-control"
+        id="message"
+        placeholder="Type your message here..."
+      ></textarea>
+    </div>
+
+    <button class="btn btn-primary w-100 mb-4" id="processBtn">Process</button>
+
+    <h3 class="text-center mb-3">Result:</h3>
+    <div class="result" id="result">Your processed message will appear here.</div>
+  </div>
+
+  <!-- Bootstrap JS Bundle (Popper + Bootstrap JS) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    function cleanInput(text) {
+      return text.toUpperCase().replace(/[^A-Z]/g, '');
+    }
+
+    // Vigenere Cipher
+    function vigenereEncrypt(plaintext, key) {
+      plaintext = cleanInput(plaintext);
+      key = cleanInput(key);
+      if (!key) return '';
+
+      let result = '';
+      for (let i = 0, j = 0; i < plaintext.length; i++) {
+        const p = plaintext.charCodeAt(i) - 65;
+        const k = key.charCodeAt(j % key.length) - 65;
+        const c = (p + k) % 26;
+        result += String.fromCharCode(c + 65);
+        j++;
+      }
+      return result;
+    }
+
+    function vigenereDecrypt(ciphertext, key) {
+      ciphertext = cleanInput(ciphertext);
+      key = cleanInput(key);
+      if (!key) return '';
+
+      let result = '';
+      for (let i = 0, j = 0; i < ciphertext.length; i++) {
+        const c = ciphertext.charCodeAt(i) - 65;
+        const k = key.charCodeAt(j % key.length) - 65;
+        const p = (c - k + 26) % 26;
+        result += String.fromCharCode(p + 65);
+        j++;
+      }
+      return result;
+    }
+
+    // Caesar Cipher
+    function caesarEncrypt(plaintext, shift) {
+      let result = '';
+      plaintext = plaintext.toUpperCase();
+      for (let i = 0; i < plaintext.length; i++) {
+        const c = plaintext.charCodeAt(i);
+        if (c >= 65 && c <= 90) {
+          result += String.fromCharCode(((c - 65 + shift) % 26) + 65);
+        } else {
+          result += plaintext.charAt(i);
+        }
+      }
+      return result;
+    }
+
+    function caesarDecrypt(ciphertext, shift) {
+      let result = '';
+      ciphertext = ciphertext.toUpperCase();
+      for (let i = 0; i < ciphertext.length; i++) {
+        const c = ciphertext.charCodeAt(i);
+        if (c >= 65 && c <= 90) {
+          result += String.fromCharCode(((c - 65 - shift + 26) % 26) + 65);
+        } else {
+          result += ciphertext.charAt(i);
+        }
+      }
+      return result;
+    }
+
+    const cipherSelect = document.getElementById('cipher');
+    const keyInput = document.getElementById('key');
+    const keyHelpText = document.getElementById('keyHelp');
+
+    // Update placeholder and help text based on cipher
+    cipherSelect.addEventListener('change', () => {
+      if (cipherSelect.value === 'vigenere') {
+        keyInput.placeholder = 'Vigenère: letters only, e.g. SECRET';
+        keyHelpText.textContent = 'Key must contain letters only for Vigenère cipher.';
+      } else if (cipherSelect.value === 'caesar') {
+        keyInput.placeholder = 'Caesar: number only, e.g. 3';
+        keyHelpText.textContent = 'Key must be a number for Caesar cipher.';
+      }
+      keyInput.value = '';
+    });
+
+    document.getElementById('processBtn').addEventListener('click', () => {
+      const cipher = cipherSelect.value;
+      const mode = document.getElementById('mode').value;
+      const key = keyInput.value.trim();
+      const message = document.getElementById('message').value;
+
+      if (message.trim() === '') {
+        alert('Please enter a message.');
+        return;
+      }
+
+      let output = '';
+
+      if (cipher === 'vigenere') {
+        if (!key.match(/^[a-zA-Z]+$/)) {
+          alert('For Vigenère cipher, the key must contain letters only.');
+          return;
+        }
+        if (mode === 'encrypt') {
+          output = vigenereEncrypt(message, key);
+        } else {
+          output = vigenereDecrypt(message, key);
+        }
+      } else if (cipher === 'caesar') {
+        const shift = parseInt(key, 10);
+        if (isNaN(shift)) {
+          alert('For Caesar cipher, the key must be a number.');
+          return;
+        }
+        if (mode === 'encrypt') {
+          output = caesarEncrypt(message, shift);
+        } else {
+          output = caesarDecrypt(message, shift);
+        }
+      }
+
+      document.getElementById('result').textContent = output || 'No result.';
+    });
+
+    // Initialize placeholders on page load
+    cipherSelect.dispatchEvent(new Event('change'));
+  </script>
+</body>
+</html>
